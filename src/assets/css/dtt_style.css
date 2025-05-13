@@ -1,0 +1,57 @@
+:root {
+  --bg-fill-color: #353535;
+  --dialog-bg-fill-color: #242323;
+  --dialog-bg-stroke-color: #323232;
+  --dialog-input-fill-color: #1C1C1C;
+  --dialog-font-color: #FFFFFF;
+  --font-color: #F5F5F5;
+  --white-bg-color: #FFFFFF;
+  --theme-color: #86BC25;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  background-color: var(--bg-fill-color);
+}
+
+.custom-dialog {
+  background-color: var(--dialog-bg-fill-color);
+  color: var(--dialog-font-color);
+  padding: 19px 18px;
+}
+
+.custom-dialog .el-form-item__label {
+  color: var(--theme-color);
+}
+
+.custom-dialog .el-form-item__content {
+  background-color: #1C1C1C;
+}
+
+.custom-dialog .el-select__wrapper {
+  background-color: inherit;
+  box-shadow: 0 0 0 1px var(--dialog-bg-stroke-color) inset;
+}
+
+.custom-dialog .el-select__placeholder {
+  color: var(--white-bg-color);
+}
+
+.custom-dialog .el-textarea__inner {
+  color: var(--white-bg-color);
+  background-color: inherit;
+  box-shadow: 0 0 0 1px var(--dialog-bg-stroke-color) inset;
+}
+
+.custom-dialog .el-textarea .el-input__count {
+  bottom: -18px;
+  background-color: inherit;
+}
+
+button:hover,
+.el-dialog__headerbtn:hover .el-dialog__close {
+  color: var(--theme-color) !important;
+  border-color: var(--theme-color) !important;
+}
+
