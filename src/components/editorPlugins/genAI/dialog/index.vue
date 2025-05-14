@@ -19,6 +19,23 @@
           <el-input v-else-if="item.type == 'textarea'" v-model="form[item.field]" :placeholder="item.placeholder"
             :maxlength="item.maxlength" show-word-limit type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" />
         </el-form-item>
+
+        <!-- Language Selection Dropdown -->
+        <el-form-item label="Translate To">
+          <template #label>
+            <div class="custom-form-item-label">
+              <label>Translate To</label>
+              <FontAwesomeIcon class="custom-vetor" :icon="faQuestion" />
+            </div>
+          </template>
+          <el-select v-model="form.language" placeholder="Select language" popper-class="custom-select">
+            <el-option label="English" value="English"></el-option>
+            <el-option label="Traditional Chinese" value="Traditional Chinese"></el-option>
+            <el-option label="Simplified Chinese" value="Simplified Chinese"></el-option>
+            <el-option label="Japanese" value="Japanese"></el-option>
+          </el-select>
+        </el-form-item>
+
         <div class="custom-content" v-if="isGenerated" style="margin-top: 30px; text-align: right;">
           <el-button class="dialog-cancel" @click="cancelAction">
             <span v-text="config.genAIConfig.footer.cancel"></span>
@@ -50,7 +67,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, defineProps } from 'vue';
-import type { FormInstance, FormRules, ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'; // Explicitly import ElMessage
 import CustomDialog from '@/components/dialog/index.vue';
 import config from '../var-config'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
@@ -69,7 +87,9 @@ const visible = ref(true)
 
 const formRef = ref<FormInstance>();
 const rules = reactive<FormRules<any>>(config.formConfig.rules);
-const form = reactive({})
+const form = reactive({
+  language: 'English' // Add language field with a default value
+})
 
 const isGenerated = ref(false);
 const loading = ref(false);
