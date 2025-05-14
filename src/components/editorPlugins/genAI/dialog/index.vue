@@ -25,7 +25,7 @@
           <template #label>
             <div class="custom-form-item-label">
               <label>Translate To</label>
-              <FontAwesomeIcon class="custom-vetor" :icon="faQuestion" />
+              <FontAwesomeIcon class="custom-vetor" :icon="fas.faQuestion" />
             </div>
           </template>
           <el-select v-model="form.language" placeholder="Select language" popper-class="custom-select">
@@ -34,6 +34,17 @@
             <el-option label="Simplified Chinese" value="Simplified Chinese"></el-option>
             <el-option label="Japanese" value="Japanese"></el-option>
           </el-select>
+          <el-button 
+            v-if="isGenerated && originalChoicesMessages.length > 0" 
+            type="default" 
+            size="small" 
+            class="ai-action-button translate-button" 
+            @click="translateAction" 
+            :disabled="loading"
+            style="margin-left: 10px;"
+          >
+            Translate
+          </el-button>
         </el-form-item>
 
         <div class="custom-content" v-if="isGenerated" style="margin-top: 30px; text-align: right;">
@@ -74,7 +85,7 @@ import config from '../var-config'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { fas, faQuestion } from '@fortawesome/free-solid-svg-icons'
 
-import { generateEditor } from '@/api/genai_api.ts'
+import { generateEditor, translateContent } from '@/api/genai_api.ts'
 
 
 const props = defineProps({
@@ -94,6 +105,7 @@ const form = reactive({
 const isGenerated = ref(false);
 const loading = ref(false);
 const generateText = ref(null);
+const originalChoicesMessages = ref<string[]>([]); // Store original generated messages
 const choicesMessages = ref([])
 
 const cancelAction = () => {
@@ -106,19 +118,24 @@ const generateAction = () => {
     if (valid) {
       loading.value = true;
       isGenerated.value = true;
-      generateEditor(form).then((res) => {
+      originalChoicesMessages.value = []; // Clear previous original messages
+      choicesMessages.value = []; // Clear previous displayed messages
+      generateText.value = null; // Clear selection
 
+      generateEditor(form).then((res) => {
         let messages = res.choices[0].message.content;
         // let matches = messages.match(/(\d+\.\s\*\*)((?!\\n\\n).)*/g);
         let matches = messages.match(/(\d+\.\s)((?!\\n\\n).)*/g);
-        choicesMessages.value = []; // Clear previous messages
+        const newMessages: string[] = [];
         if (matches != null) {
           for (let i in matches) {
             const matchResult = matches[i].match(/(\d+\.\s)(.*)/);
             if (matchResult && matchResult[2]) {
-              choicesMessages.value.push(matchResult[2].trim());
+              newMessages.push(matchResult[2].trim());
             }
           }
+          originalChoicesMessages.value = [...newMessages];
+          choicesMessages.value = [...newMessages];
         } else {
           isGenerated.value = false;
           ElMessage({
@@ -138,6 +155,46 @@ const generateAction = () => {
   });
 }
 
+const translateAction = () => {
+  if (originalChoicesMessages.value.length === 0) {
+    ElMessage.warning('No content available to translate. Please generate content first.');
+    return;
+  }
+  if (!form.language) {
+    ElMessage.warning('Please select a language to translate to.');
+    return;
+  }
+
+  loading.value = true;
+  choicesMessages.value = []; // Clear current display while translating
+  generateText.value = null; // Clear selection
+
+  translateContent(originalChoicesMessages.value, form.language)
+    .then((res) => {
+      let messages = res.choices[0]?.message?.content;
+      let matches = messages?.match(/(\d+\.\s)((?!\\n\\n).)*/g);
+      const translatedMessages: string[] = [];
+      if (matches != null) {
+        for (let i in matches) {
+          const matchResult = matches[i].match(/(\d+\.\s)(.*)/);
+          if (matchResult && matchResult[2]) {
+            translatedMessages.push(matchResult[2].trim());
+          }
+        }
+        choicesMessages.value = translatedMessages;
+      } else {
+        ElMessage.error(messages || 'Failed to parse translated content. The AI might have returned an unexpected format.');
+      }
+    })
+    .catch(err => {
+      ElMessage.error('Failed to translate content.');
+      console.error('Translation error:', err);
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+};
+
 const confirmAction = () => {
   if (!isGenerated.value) {
     generateAction();
@@ -155,6 +212,7 @@ const confirmAction = () => {
     isGenerated.value = false;
     generateText.value = null;
     choicesMessages.value = [];
+    originalChoicesMessages.value = [];
     config.genAIConfig.footer.confirm.value = 'Generate';
     // formRef.value?.resetFields(); // Optionally reset form fields if needed
   }
@@ -174,6 +232,7 @@ const handleAIEditor = (e) => {
 const regenerateContent = () => {
   // Clear previous results and selection
   choicesMessages.value = [];
+  originalChoicesMessages.value = [];
   generateText.value = null;
   // isGenerated.value is likely true, generateAction will manage it and loading state
   generateAction();
@@ -235,6 +294,10 @@ const copyContent = async () => {
         color: #A0A0A0 !important;            // Lighter text for disabled
         border-color: #606060 !important;
       }
+    }
+    // Specific style for translate button if needed, inherits ai-action-button styles
+    &.translate-button {
+      // Add any specific overrides for translate button here
     }
   }
 }
