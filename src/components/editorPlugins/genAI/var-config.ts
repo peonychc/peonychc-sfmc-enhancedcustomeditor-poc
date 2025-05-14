@@ -18,6 +18,7 @@ const formConfig = {
       field: "Brand_Voice",
       label: "Select Your Brand Voice",
       type: "select",
+      showValueAsDescription: true, // <--- MAKE SURE THIS IS PRESENT AND TRUE
       options: [{
         label: "Deloitte Digital",
         value: "Deloitte Digital"

@@ -18,6 +18,12 @@
           <el-input v-else-if="item.type == 'input'" v-model="form[item.field]" :placeholder="item.placeholder" />
           <el-input v-else-if="item.type == 'textarea'" v-model="form[item.field]" :placeholder="item.placeholder"
             :maxlength="item.maxlength" show-word-limit type="textarea" :autosize="{ minRows: 2, maxRows: 6 }" />
+          
+          <!-- Display description for select if configured -->
+          <div v-if="item.type === 'select' && item.showValueAsDescription && form[item.field]"
+               class="selected-value-description">
+            {{ form[item.field] }}
+          </div>
         </el-form-item>
 
         <!-- Language Selection Dropdown -->
@@ -451,5 +457,12 @@ const copyContent = async () => {
   &.is-disabled span {
     color: #A0A0A0 !important; // Ensure disabled text color is applied
   }
+}
+
+.selected-value-description {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.4;
 }
 </style>
