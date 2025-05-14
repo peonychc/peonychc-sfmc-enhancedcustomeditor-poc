@@ -30,8 +30,12 @@
         <el-form-item v-if="isGenerated">
           <template #label>
             <div class="custom-form-item-label">
-              <label> AI Editor Results</label>
-              <FontAwesomeIcon class="custom-vetor" :icon="fas.faQuestion" />
+              <label>AI Editor Results</label>
+              <div class="ai-results-actions" v-if="isGenerated && choicesMessages.length > 0">
+                <el-button type="default" size="small" class="ai-action-button" @click="regenerateContent">Regenerate</el-button>
+                <el-button type="default" size="small" class="ai-action-button" @click="copyContent" :disabled="!generateText">Copy</el-button>
+              </div>
+              <FontAwesomeIcon class="custom-vetor" :icon="faQuestion" />
             </div>
           </template>
           <div class="custom-text-select" v-loading="loading" style="height: 194px;width: 100%;">
@@ -45,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, defineProps } from 'vue'
+import { ref, reactive, defineProps } from 'vue';
 import type { FormInstance, FormRules, ElMessage } from 'element-plus'
 import CustomDialog from '@/components/dialog/index.vue';
 import config from '../var-config'
@@ -87,10 +91,13 @@ const generateAction = () => {
         let messages = res.choices[0].message.content;
         // let matches = messages.match(/(\d+\.\s\*\*)((?!\\n\\n).)*/g);
         let matches = messages.match(/(\d+\.\s)((?!\\n\\n).)*/g);
+        choicesMessages.value = []; // Clear previous messages
         if (matches != null) {
           for (let i in matches) {
-            // choicesMessages.value[i] = matches[i].match(/(\d+\.\s\*\*)((.)*)\*\*/)[2]
-            choicesMessages.value[i] = matches[i].match(/(\d+\.\s)((.)*)/)[2]
+            const matchResult = matches[i].match(/(\d+\.\s)(.*)/);
+            if (matchResult && matchResult[2]) {
+              choicesMessages.value.push(matchResult[2].trim());
+            }
           }
         } else {
           isGenerated.value = false;
@@ -100,8 +107,13 @@ const generateAction = () => {
             duration: 5000
           });
         }
+      }).catch(err => {
+        ElMessage.error('Failed to generate content.');
+        console.error('Generation error:', err);
+        isGenerated.value = false; // Reset if error
+      }).finally(() => {
         loading.value = false;
-      })
+      });
     }
   });
 }
@@ -111,12 +123,20 @@ const confirmAction = () => {
     generateAction();
     config.genAIConfig.footer.confirm.value = 'Apply';
   } else {
+    if (!generateText.value) {
+      ElMessage.warning('Please select an AI generated option to apply.');
+      return;
+    }
     let element = props.writer.createText(generateText.value);
     props.model.insertContent(element);
 
     visible.value = false;
-    isGenerated.value = false
+    // Reset state for next time
+    isGenerated.value = false;
+    generateText.value = null;
+    choicesMessages.value = [];
     config.genAIConfig.footer.confirm.value = 'Generate';
+    // formRef.value?.resetFields(); // Optionally reset form fields if needed
   }
 }
 
@@ -130,12 +150,73 @@ const handleAIEditor = (e) => {
   generateText.value = dom.textContent;
 
 }
+
+const regenerateContent = () => {
+  // Clear previous results and selection
+  choicesMessages.value = [];
+  generateText.value = null;
+  // isGenerated.value is likely true, generateAction will manage it and loading state
+  generateAction();
+}
+
+const copyContent = async () => {
+  if (generateText.value) {
+    try {
+      await navigator.clipboard.writeText(generateText.value);
+      ElMessage.success('Content copied to clipboard!');
+    } catch (err) {
+      ElMessage.error('Failed to copy content.');
+      console.error('Failed to copy: ', err);
+    }
+  } else {
+    ElMessage.warning('No content selected to copy.');
+  }
+}
+
 </script>
 
 <style lang="scss" scoped>
 .custom-form-item-label {
-  display: inline-flex;
+  display: inline-flex; // Allows label and actions to sit on the same line like text
   position: relative;
+  align-items: center; // Vertically aligns the label text and the action buttons
+
+  .ai-results-actions {
+    display: inline-flex; // Ensures buttons are in a row
+    gap: 8px; // Space between Regenerate and Copy buttons
+    margin-left: 10px; // Space between "AI Editor Results" text and "Regenerate" button
+
+    .ai-action-button {
+      padding: 2px 8px; // Smaller padding for a compact button
+      font-size: 12px; // Smaller font size
+      line-height: 18px; // Adjust line height for content
+      min-height: unset; // Remove Element Plus default min-height
+      height: auto; // Let padding and line-height determine height
+
+      background-color: #B0B0B0; // Light grey background as per image
+      color: #333333;           // Dark text for contrast
+      border: 1px solid #A0A0A0; // Slightly darker border
+      box-shadow: none; // Remove default shadow if any
+
+      &:hover {
+        background-color: #C0C0C0; // Lighter on hover
+        border-color: #B0B0B0;
+        color: #333333; // Keep text color consistent
+      }
+      &:active {
+        background-color: #A0A0A0; // Darker on active
+        border-color: #909090;
+        color: #333333; // Keep text color consistent
+      }
+
+      // Element Plus uses .is-disabled for disabled state
+      &.is-disabled {
+        background-color: #707070 !important; // Darker grey for disabled button background
+        color: #A0A0A0 !important;            // Lighter text for disabled
+        border-color: #606060 !important;
+      }
+    }
+  }
 }
 
 .custom-vetor {
@@ -146,9 +227,9 @@ const handleAIEditor = (e) => {
   color: var(--dialog-bg-fill-color);
   background-color: #515151;
   float: right;
-  position: absolute;
-  top: 5px;
-  right: -28px;
+  position: absolute; // Keeps icon positioned relative to .custom-form-item-label
+  top: 5px; // Original vertical position
+  right: -28px; // Original horizontal position (relative to the end of the label container)
 }
 </style>
 <style lang="scss">
@@ -270,6 +351,22 @@ const handleAIEditor = (e) => {
 
   button.dialog-confirm:hover {
     background-color: var(--white-bg-color) !important;
+  }
+}
+
+// Additional global styles if needed, or to ensure el-button overrides
+.el-button.ai-action-button {
+  // Ensure text color is correctly applied, as el-button might have internal spans
+  span {
+    color: #333333; 
+  }
+
+  &:hover span, &:focus span, &:active span {
+    color: #333333; // Keep text color dark on interaction
+  }
+
+  &.is-disabled span {
+    color: #A0A0A0 !important; // Ensure disabled text color is applied
   }
 }
 </style>
