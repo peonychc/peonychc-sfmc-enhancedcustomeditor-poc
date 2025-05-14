@@ -21,7 +21,20 @@ const formConfig = {
       options: [{
         label: "Deloitte Digital",
         value: "Deloitte Digital"
-      }],
+      },
+      {
+        label: "DU Hotel (Hospitality demo)",
+        value: "A premium Deloitte - themed business hotel. It offers top - notch accommodation, dining, and meeting services, blending Deloitte's professional elements with hospitality. The hotel is designed to provide business travelers with a comfortable and efficient stay, featuring well - appointed rooms, diverse dining options, advanced meeting facilities, leisure amenities, smart systems, and a professional service team."
+      },
+      {
+        label: "Deloitte Apparels (Fashion demo)",
+        value: "A professional fashion brand themed on Deloitte, known for its signature Deloitte green color palette. We specialize in green - based professional attire and accessories, blending Deloitte's professional elements with fashion trends. Our focus on quality and innovation ensures that our stylish collections are perfect for the workplace and beyond."
+      },
+      {
+        label: "Deloitte Bank (Banking demo)",
+        value: "A forward-thinking Deloitte-themed bank. It offers innovative financial solutions and personalized services, combining Deloitte's professional insights with advanced banking technology. The bank aims to help clients achieve their financial goals with a wide range of products and services, including retail banking, corporate banking, and investment banking."
+      }
+      ],
       required: true
     },
     {
